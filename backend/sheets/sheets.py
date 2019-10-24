@@ -52,7 +52,7 @@ class Sheets(commands.Cog):
             if (now_day + 1) in backend.day_themes.day_themes.keys() and now_date.month == self.ink_month:
                 topics.append(f"{now_day + 1}: {backend.day_themes.day_themes[now_day + 1]}")
 
-            topic_str = f"Currently accepting: " + topics.join(", ") if topics else "No longer accepting any days"
+            topic_str = f"Currently accepting - " + topics.join(", ") if topics else "No longer accepting any days"
             await channel.edit(
                 reason="Time passed",
                 topic=topic_str
