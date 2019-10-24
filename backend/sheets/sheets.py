@@ -23,24 +23,41 @@ log = logging.getLogger(__name__)
 class Sheets(commands.Cog):
     def __init__(self, bot):
         self.bot: Client = bot
+        self.current_day = None
         self.channel_description.start()
 
     def cog_unload(self):
         self.channel_description.cancel()
 
-    @tasks.loop(hours=1)
+
+    @tasks.loop(seconds=1)
     async def channel_description(self):
-        now_day = int(datetime.datetime.now().strftime("%d"))
-        channel: discord.TextChannel = self.bot.get_channel(
-            backend.config.inktober_submit_channel
-        )
-        await channel.edit(
-            reason="Time passed",
-            topic=f"Currently accepting "
-            f"{now_day - 1}: {backend.day_themes.day_themes[now_day - 1]},"
-            f"{now_day}: {backend.day_themes.day_themes[now_day]},"
-            f"{now_day + 1}: {backend.day_themes.day_themes[now_day + 1]}",
-        )
+        now_date = datetime.datetime.now(tz=datetime.timezone.utc)
+        now_day = int(now_date.strftime("%d"))
+        tomorrow_date, until_tomorrow = await get_tomorrow_day()
+        if now_day == self.current_day:
+            # Annoying solution to fill the feature gap of scheduled tasks not being implemented yet in d.py
+            await asyncio.sleep(until_tomorrow)
+
+        else:
+            channel: discord.TextChannel = self.bot.get_channel(
+                backend.config.inktober_submit_channel
+            )
+            await channel.edit(
+                reason="Time passed",
+                topic=f"Currently accepting "
+                f"{now_day - 1}: {backend.day_themes.day_themes[now_day - 1]},"
+                f"{now_day}: {backend.day_themes.day_themes[now_day]},"
+                f"{now_day + 1}: {backend.day_themes.day_themes[now_day + 1]}",
+            )
+            self.current_day = now_day
+
+
+    async def get_tomorrow_day():
+        tomorrow = datetime.datetime.utcnow() + datetime.timedelta(1)
+        min_time = datetime.datetime.combine(tomorrow, datetime.time())
+        now = datetime.datetime.utcnow()
+        return int(min_time.strftime("%d")), (min_time - now).seconds 
 
 
 def setup(bot):
