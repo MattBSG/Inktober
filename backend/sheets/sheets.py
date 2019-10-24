@@ -23,7 +23,6 @@ log = logging.getLogger(__name__)
 class Sheets(commands.Cog):
     def __init__(self, bot):
         self.bot: Client = bot
-        self.current_day = None
         self.ink_month = 10 # October
         self.channel_description.start()
 
@@ -31,40 +30,25 @@ class Sheets(commands.Cog):
         self.channel_description.cancel()
 
 
-    @tasks.loop(seconds=1)
+    @tasks.loop(time=datetime.time(tzinfo=datetime.timezone.utc))
     async def channel_description(self):
-        now_date = datetime.datetime.now(tz=datetime.timezone.utc)
-        now_day = int(now_date.strftime("%d"))
-        tomorrow_date, until_tomorrow = await self.get_tomorrow_day()
-        if now_day == self.current_day:
-            # Annoying solution to fill the feature gap of scheduled tasks not being implemented yet in d.py
-            await asyncio.sleep(until_tomorrow)
+        now_day = int(datetime.datetime.now().strftime("%d"))
+        channel: discord.TextChannel = self.bot.get_channel(
+            backend.config.inktober_submit_channel
+        )
+        topics = []
+        if (now_day - 1) in backend.day_themes.day_themes.keys() and (now_date - datetime.timedelta(-1)).month == self.ink_month:
+            topics.append(f"{now_day - 1}: {backend.day_themes.day_themes[now_day - 1]}")
+        if now_day in backend.day_themes.day_themes.keys() and now_date.month == self.ink_month:
+            topics.append(f"{now_day}: {backend.day_themes.day_themes[now_day]}")
+        if (now_day + 1) in backend.day_themes.day_themes.keys() and (now_date - datetime.timedelta(1)).month == self.ink_month:
+            topics.append(f"{now_day + 1}: {backend.day_themes.day_themes[now_day + 1]}")
 
-        else:
-            channel: discord.TextChannel = self.bot.get_channel(
-                backend.config.inktober_submit_channel
-            )
-            topics = []
-            if (now_day - 1) in backend.day_themes.day_themes.keys() and (now_date - datetime.timedelta(-1)).month == self.ink_month:
-                topics.append(f"{now_day - 1}: {backend.day_themes.day_themes[now_day - 1]}")
-            if now_day in backend.day_themes.day_themes.keys() and now_date.month == self.ink_month:
-                topics.append(f"{now_day}: {backend.day_themes.day_themes[now_day]}")
-            if (now_day + 1) in backend.day_themes.day_themes.keys() and (now_date - datetime.timedelta(1)).month == self.ink_month:
-                topics.append(f"{now_day + 1}: {backend.day_themes.day_themes[now_day + 1]}")
-
-            topic_str = f"Currently accepting - " + ", ".join(topics) if topics else "No longer accepting any days"
-            await channel.edit(
-                reason="Time passed",
-                topic=topic_str
-            )
-            self.current_day = now_day
-
-
-    async def get_tomorrow_day(self):
-        tomorrow = datetime.datetime.utcnow() + datetime.timedelta(1)
-        min_time = datetime.datetime.combine(tomorrow, datetime.time())
-        now = datetime.datetime.utcnow()
-        return int(min_time.strftime("%d")), (min_time - now).seconds 
+        topic_str = f"Currently accepting - " + ", ".join(topics) if topics else "Not accepting any submissions at this time"
+        await channel.edit(
+            reason="Time passed",
+            topic=topic_str
+        )
 
 
 def setup(bot):
