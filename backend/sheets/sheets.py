@@ -45,11 +45,11 @@ class Sheets(commands.Cog):
                 backend.config.inktober_submit_channel
             )
             topics = []
-            if (now_day - 1) in backend.day_themes.day_themes.keys() and now_date.month == self.ink_month:
+            if (now_day - 1) in backend.day_themes.day_themes.keys() and (now_date - datetime.timedelta(-1)).month == self.ink_month:
                 topics.append(f"{now_day - 1}: {backend.day_themes.day_themes[now_day - 1]}")
             if now_day in backend.day_themes.day_themes.keys() and now_date.month == self.ink_month:
                 topics.append(f"{now_day}: {backend.day_themes.day_themes[now_day]}")
-            if (now_day + 1) in backend.day_themes.day_themes.keys() and now_date.month == self.ink_month:
+            if (now_day + 1) in backend.day_themes.day_themes.keys() and (now_date - datetime.timedelta(1)).month == self.ink_month:
                 topics.append(f"{now_day + 1}: {backend.day_themes.day_themes[now_day + 1]}")
 
             topic_str = f"Currently accepting - " + topics.join(", ") if topics else "No longer accepting any days"
