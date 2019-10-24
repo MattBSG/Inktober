@@ -43,12 +43,18 @@ class Sheets(commands.Cog):
             channel: discord.TextChannel = self.bot.get_channel(
                 backend.config.inktober_submit_channel
             )
+            topics = []
+            if (now_day - 1) in backend.day_themes.day_themes.keys():
+                topics.append(f"{now_day - 1}: {backend.day_themes.day_themes[now_day - 1]}")
+            if now_day in backend.day_themes.day_themes.keys():
+                topics.append(f"{now_day}: {backend.day_themes.day_themes[now_day]}")
+            if (now_day + 1) in backend.day_themes.day_themes.keys():
+                topics.append(f"{now_day + 1}: {backend.day_themes.day_themes[now_day + 1]}")
+
+            topic_str = f"Currently accepting: " + topics.join(", ") if topics else "No longer accepting any days"
             await channel.edit(
                 reason="Time passed",
-                topic=f"Currently accepting "
-                f"{now_day - 1}: {backend.day_themes.day_themes[now_day - 1]},"
-                f"{now_day}: {backend.day_themes.day_themes[now_day]},"
-                f"{now_day + 1}: {backend.day_themes.day_themes[now_day + 1]}",
+                topic=topic_str
             )
             self.current_day = now_day
 
